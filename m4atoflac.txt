@@ -1,0 +1,7 @@
+mplayer -srate 16000 -ao pcm:file=targetfile.flac sourcefile.m4a
+
+
+sox -d $file silence -l 1 0 1% 1 2.5 1% rate 16k
+
+
+ffmpeg -i Memo\(2\).m4a -vn -ac 1 -ar 16000 -acodec flac test3.flac

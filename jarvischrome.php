@@ -1,7 +1,9 @@
 <?php 
     $stturl = "https://www.google.com/speech-api/v1/recognize?xjerr=1&client=chromium&lang=en-US";
-    $wolframurl = "http://api.wolframalpha.com/v2/query?appid=YOUR_APP_ID_HERE&format=plaintext&podtitle=Result&input=";
+    $wolframurl = "http://api.wolframalpha.com/v2/query?appid=<YOUR WOLFRAM APP ID>&format=plaintext&podtitle=Result&input=";
+    $trueknowledgeurl = "https://api.trueknowledge.com/direct_answer/?api_account_id=<YOUR TRUE KNOWLEDGE API USERNAME>&api_password=<YOUR TRUE KNOWLEDGE API PASSWORD>&question=";
     $ttsurl = "http://translate.google.com/translate_tts?tl=en&q=";
+    $lightswitchip = "192.168.1.177";
 
     if(isset($_GET['speechinput'])){
 
@@ -34,32 +36,72 @@
         $text = $_GET['speechinput'];
 
 
-	if(stripos($text,"turn")!==FALSE){
-		// Home Control API
-		// Handle stuff here
-        $search = array("turn","my");
-        $replace = array("turned","your");
-		$responsetext = str_ireplace($search,$replace,$text);
-		$answer = "Yes master cranky, I have ".$responsetext;
-	}
-	else{
-		// Wolfram Alpha API
+        if(stripos($text,"turn")!==FALSE){
+            // Home Control API
+            // Handle stuff here
+            if(stripos($text,"light")!==FALSE){
+                $url = $lightswitchip."/?dev=light";
+                if(stripos($text," on")!==FALSE){
+                    $url .= "&cmd=on";
+                }
+                else{
+                    $url .= "&cmd=off";
+                }
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                ob_start();
+                curl_exec($ch);
+                curl_close($ch);
+                ob_end_clean();
+            }
+            $search = array("turn","my");
+            $replace = array("turned","your");
+            $responsetext = str_ireplace($search,$replace,$text);
+            $answer = "Yes, I ".$responsetext;
+        }
+        else{
+            // True Knowledge API
 
-		$wolframurl .= urlencode($text);
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $wolframurl);
-		ob_start();
-		curl_exec($ch);
-		curl_close($ch);
-		$contents = ob_get_contents();
-		ob_end_clean();
-		//echo $contents;
-		$obj = new SimpleXMLElement($contents);
-		$answer = $obj->pod->subpod->plaintext;
-		if(!strlen($answer)) $answer = "sorry master cranky, I can't help you with that";
-		else $answer = "master cranky, ".$answer;
-		//echo $answer;
-	}
+            $trueknowledgeurl .= urlencode($text);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $trueknowledgeurl);
+            ob_start();
+            curl_exec($ch);
+            curl_close($ch);
+            $contents = ob_get_contents();
+            ob_end_clean();
+            //echo $contents;
+            $contents = str_replace("tk:","tk_",$contents); // simplexml doesn't seem to like colons
+            $obj = new SimpleXMLElement($contents);
+            if($answer = $obj->tk_text_result){
+                //$answer = "master cranky, ".$answer;
+            }
+            else{
+                //$answer = $obj->tk_error_message;
+
+
+                // Wolfram Alpha API
+
+                $wolframurl .= urlencode($text);
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $wolframurl);
+                ob_start();
+                curl_exec($ch);
+                curl_close($ch);
+                $contents = ob_get_contents();
+                ob_end_clean();
+                //echo $contents;
+                $obj = new SimpleXMLElement($contents);
+                $answer = $obj->pod->subpod->plaintext;
+                if(strlen($answer)){
+                    //$answer = "master cranky, ".$answer;
+                }
+                else{
+                    $answer = "sorry, I don't understand";
+                }
+            }
+            //echo $answer;
+        }
 
 
 
@@ -85,16 +127,16 @@
         <html>
             <head>
                 <title>.: Jarvis :.</title>
-		<script>
-			function submitandclear(){
-				if(document.getElementById('speechinput').value != ""){
-					document.jarvisform.submit();
-					document.getElementById('speechinput').value = "";
-				}
-			}
+                <script>
+                    function submitandclear(){
+                        if(document.getElementById('speechinput').value != ""){
+                            document.jarvisform.submit();
+                            document.getElementById('speechinput').value = "";
+                        }
+                    }
 
 
-		</script>
+                </script>
             </head>
             <body>
                 <form method="get" name="jarvisform" id="jarvisform" action="<?=$_SERVER['PHP_SELF']?>" target="voiceframe">

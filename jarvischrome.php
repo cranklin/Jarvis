@@ -3,7 +3,7 @@
     $wolframurl = "http://api.wolframalpha.com/v2/query?appid=<YOUR WOLFRAM APP ID>&format=plaintext&podtitle=Result&input=";
     $trueknowledgeurl = "https://api.trueknowledge.com/direct_answer/?api_account_id=<YOUR TRUE KNOWLEDGE API USERNAME>&api_password=<YOUR TRUE KNOWLEDGE API PASSWORD>&question=";
     $ttsurl = "http://translate.google.com/translate_tts?tl=en&q=";
-    $lightswitchip = "192.168.1.177";
+    $arduinowebserver1 = "192.168.1.177";
 
     if(isset($_GET['speechinput'])){
 
@@ -40,7 +40,7 @@
             // Home Control API
             // Handle stuff here
             if(stripos($text,"light")!==FALSE){
-                $url = $lightswitchip."/?dev=light";
+                $url = $arduinowebserver1."/?dev=light";
                 if(stripos($text," on")!==FALSE){
                     $url .= "&cmd=on";
                 }
@@ -58,6 +58,17 @@
             $replace = array("turned","your");
             $responsetext = str_ireplace($search,$replace,$text);
             $answer = "Yes, I ".$responsetext;
+        }
+        elseif(stripos($text,"temperature")!==FALSE && stripos($text,"house")!==FALSE){
+            // Get Home Temperature
+            $url = $arduinowebserver1."/?dev=temperature";
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            ob_start();
+            curl_exec($ch);
+            curl_close($ch);
+            $answer = ob_get_contents();
+            ob_end_clean();
         }
         else{
             // True Knowledge API

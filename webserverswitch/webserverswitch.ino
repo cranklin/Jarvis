@@ -80,6 +80,17 @@ void loop()
           readstring = "";
           break;
         }
+        else if (c == '\n' && currentLineIsBlank && readstring.indexOf("dev=temperature")>0){
+          // send a standard http response header
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-Type: text/html");
+          client.println();
+          client.print(gettemperature());
+          client.print(" degrees fahrenheit");
+          
+          readstring = "";
+          break;
+        }
         else if (c == '\n' && currentLineIsBlank) {
           // send a standard http response header
           client.println("HTTP/1.1 200 OK");
@@ -122,4 +133,10 @@ int switchlight(int onoroff){
     digitalWrite(ledPin, LOW);
   }
   return onoroff;
+}
+
+float gettemperature(void){
+  float temperature = analogRead(0) * .004882814;
+  temperature = (((temperature - .5) * 100) * 1.8) + 32;
+  return temperature;
 }
